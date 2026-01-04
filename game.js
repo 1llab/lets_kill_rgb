@@ -80,6 +80,23 @@ function moveBlocks() {
   requestAnimationFrame(moveBlocks);
 }
 
+function getBottomMostIndex() {
+  if (blocks.length === 0) return -1;
+
+  let bestIdx = 0;
+  let bestY = blocks[0].offsetTop;
+
+  for (let i = 1; i < blocks.length; i++) {
+    const y = blocks[i].offsetTop;
+    if (y > bestY) {
+      bestY = y;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
+}
+
+
 function randomColor() {
   return COLORS[Math.floor(Math.random() * COLORS.length)];
 }
@@ -125,7 +142,8 @@ function startTickLoop() {
     updateTimerBar();
 
     // 메시지에 남은시간 표시(원하면 UI 따로 빼도 됨)
-    const need = blocks[blocks.length - 1].dataset.color.toUpperCase();
+    const idx = getBottomMostIndex();
+    const need = blocks[idx].dataset.color.toUpperCase();
     setMessage(`NEXT: ${need}  |  TIME: ${(timeLeftMs / 1000).toFixed(2)}s`, true);
 
     if (timeLeftMs <= 0) {
@@ -139,8 +157,7 @@ function shoot(color) {
   if (isGameOver || isPaused) return;
   if (blocks.length === 0) return;
 
-  // 가장 아래 블럭
-  const idx = blocks.length - 1;
+  const idx = getBottomMostIndex();
   const target = blocks[idx];
   const need = target.dataset.color;
 
@@ -151,16 +168,14 @@ function shoot(color) {
     return;
   }
 
-  // 중요: 배열에서 먼저 제거
-  blocks.splice(idx, 1);
-
-  // 그 다음 DOM 제거
   target.remove();
+  blocks.splice(idx, 1);
 
   score += 1;
   updateHud();
   resetTargetTimer();
 }
+
 
 function stopAllTimers() {
   clearInterval(spawnTimer);
@@ -279,6 +294,7 @@ window.addEventListener("keydown", (e) => {
 // boot
 moveBlocks();
 restartWithCountdown();
+
 
 
 
