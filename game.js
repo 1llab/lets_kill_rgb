@@ -11,6 +11,8 @@ const msgEl = document.getElementById("message");
 const timerBarWrap = document.getElementById("timerBarWrap");
 const timerBar = document.getElementById("timerBar");
 const gameArea = document.getElementById("gameArea");
+const blockLayer = document.getElementById("blockLayer");
+
 
 const COLORS = ["red", "green", "blue"];
 
@@ -47,19 +49,24 @@ function fireBeam(color) {
   setTimeout(() => beam.remove(), 180);
 }
 
-function createBlock(color) {
+const BLOCK_SIZE = 56; // CSS --blockSize랑 맞춰
+const GAP = 10;
+
+function createBlock(color, initialY = -60) {
   const el = document.createElement("div");
   el.className = `block ${color}`;
   el.dataset.color = color;
 
   el.style.position = "absolute";
-  el.style.top = "-60px";
+  el.style.top = initialY + "px";
   el.style.left = "50%";
   el.style.transform = "translateX(-50%)";
 
-  gameArea.appendChild(el);
+  // gameArea 말고 blockLayer에 붙이기
+  blockLayer.appendChild(el);
   blocks.push(el);
 }
+
 
 function moveBlocks() {
   const bottomLimit = gameArea.clientHeight - 60;
@@ -265,7 +272,10 @@ function restartWithCountdown() {
     setMessage("GO!", true);
 
     // 시작할 블럭 미리 5개 쌓아두기
-    for (let i = 0; i < 5; i++) createBlock(randomColor());
+    for (let i = 0; i < 5; i++) {
+      createBlock(randomColor(), -60 - i * (BLOCK_SIZE + GAP));
+    }
+
 
     isPaused = false;
     resetTargetTimer();
@@ -294,6 +304,7 @@ window.addEventListener("keydown", (e) => {
 // boot
 moveBlocks();
 restartWithCountdown();
+
 
 
 
