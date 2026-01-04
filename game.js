@@ -159,19 +159,6 @@ function shoot(color) {
 }
 
 
-  // correct
-  fireBeam(color);
-  target.remove();
-  blocks.shift();
-
-  score += 1;
-  updateHud();
-
-  // 다음 타겟으로 넘어가면 타이머 리셋
-  if (blocks.length > 0) resetTargetTimer();
-  else setMessage("블럭 생성 중...", true);
-}
-
 function stopAllTimers() {
   clearInterval(spawnTimer);
   clearInterval(accelTimer);
@@ -198,11 +185,6 @@ function startLoops() {
 
     createBlock(randomColor());
 
-    // 블럭 너무 쌓이면 게임오버(선택)
-    if (blocks.length > 18) {
-      gameOver("블럭이 너무 쌓였다! (R로 재시작)");
-    }
-
     // 타겟이 비어있다가 새로 생긴 경우 타이머 세팅
     if (blocks.length === 1) resetTargetTimer();
   }, spawnMs);
@@ -220,7 +202,6 @@ function startLoops() {
       if (isGameOver || isPaused) return;
 
       createBlock(randomColor());
-      if (blocks.length > 18) gameOver("블럭이 너무 쌓였다! (R로 재시작)");
       if (blocks.length === 1) resetTargetTimer();
     }, spawnMs);
 
@@ -241,7 +222,6 @@ function clearBlocks() {
 function restartWithCountdown() {
   stopAllTimers();
   clearBlocks();
-  moveBlocks();
 
   score = 0;
   spawnMs = 1000;
@@ -294,7 +274,9 @@ window.addEventListener("keydown", (e) => {
 });
 
 // boot
+moveBlocks();
 restartWithCountdown();
+
 
 
 
