@@ -51,8 +51,26 @@ function createBlock(color) {
   const el = document.createElement("div");
   el.className = `block ${color}`;
   el.dataset.color = color;
-  stackLane.appendChild(el);
+
+  el.style.top = "-60px"; // 화면 위에서 시작
+  el.style.position = "absolute";
+
+  gameArea.appendChild(el);
   blocks.push(el);
+}
+
+function moveBlocks() {
+  blocks.forEach(block => {
+    const y = block.offsetTop + 1.2; // 속도
+    block.style.top = y + "px";
+
+    // 바닥까지 오면 게임오버
+    if (y > 360) {
+      gameOver("블럭이 닿았다!");
+    }
+  });
+
+  if (!isGameOver) requestAnimationFrame(moveBlocks);
 }
 
 function randomColor() {
@@ -111,17 +129,23 @@ function startTickLoop() {
 
 // ---------- game logic ----------
 function shoot(color) {
-  if (isGameOver || isPaused) return;
-  if (blocks.length === 0) return;
+  if (isGameOver || blocks.length === 0) return;
 
-  const target = blocks[0];
+  // ✅ 가장 아래 블럭이 타겟
+  const target = blocks[blocks.length - 1];
   const need = target.dataset.color;
 
+  fireBeam(color);
+
   if (color !== need) {
-    fireBeam(color);
-    gameOver(`틀림! 다음은 ${need.toUpperCase()}였음\n(R로 재시작)`);
+    gameOver(`틀림! ${need.toUpperCase()}였음`);
     return;
   }
+
+  // 맞추면 제거
+  target.remove();
+  blocks.pop(); // ⬅️ 핵심
+}
 
   // correct
   fireBeam(color);
@@ -258,4 +282,5 @@ window.addEventListener("keydown", (e) => {
 
 // boot
 restartWithCountdown();
+
 
