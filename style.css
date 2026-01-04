@@ -172,3 +172,25 @@ body {
 }
 
 .hidden { display: none; }
+
+/* ✅ Timer Gauge Bar */
+#timerBarWrap {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  width: var(--laneW);
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.10);
+  overflow: hidden;
+}
+
+#timerBar {
+  height: 100%;
+  width: 100%;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.85);
+  transition: width 50ms linear;
+}
