@@ -66,6 +66,8 @@ function moveBlocks() {
 
   if (!isGameOver && !isPaused) {
     blocks.forEach(block => {
+      if (!block.isConnected) return; // ✅ 이미 제거된 DOM이면 무시
+
       const y = block.offsetTop + 1.2;
       block.style.top = y + "px";
 
@@ -137,8 +139,9 @@ function shoot(color) {
   if (isGameOver || isPaused) return;
   if (blocks.length === 0) return;
 
-  // 가장 아래 블럭이 타겟
-  const target = blocks[blocks.length - 1];
+  // 가장 아래 블럭
+  const idx = blocks.length - 1;
+  const target = blocks[idx];
   const need = target.dataset.color;
 
   fireBeam(color);
@@ -148,16 +151,16 @@ function shoot(color) {
     return;
   }
 
-  // 성공
+  // 중요: 배열에서 먼저 제거
+  blocks.splice(idx, 1);
+
+  // 그 다음 DOM 제거
   target.remove();
-  blocks.pop();
 
   score += 1;
   updateHud();
-
   resetTargetTimer();
 }
-
 
 function stopAllTimers() {
   clearInterval(spawnTimer);
@@ -276,6 +279,7 @@ window.addEventListener("keydown", (e) => {
 // boot
 moveBlocks();
 restartWithCountdown();
+
 
 
 
