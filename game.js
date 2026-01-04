@@ -1,9 +1,8 @@
-// RGB Beam Game (order-only)
-// - Blocks appear in a single vertical lane (stacked).
-// - Player must press the matching color for the NEXT block (front of queue).
-// - Correct: fire beam + remove that block + score++
-// - Wrong: game over
-// - Over time: spawn gets faster
+// RGB Beam Game (order + time limit)
+// - Must press matching color for NEXT block (queue front)
+// - If time runs out -> GAME OVER
+// - R restart with countdown (gives you time to ready)
+// - Spawn gets faster over time
 
 const stackLane = document.getElementById("stackLane");
 const beamLayer = document.getElementById("beamLayer");
@@ -13,13 +12,20 @@ const msgEl = document.getElementById("message");
 
 const COLORS = ["red", "green", "blue"];
 
-let blocks = [];          // queue: blocks[0] is the next target
+let blocks = [];                 // queue: blocks[0] is next target
 let score = 0;
-let spawnMs = 1000;       // gets smaller (faster)
-let speedFactor = 1.0;    // display only (rough indicator)
+
+let spawnMs = 1000;              // gets smaller
+let speedFactor = 1.0;
+
 let spawnTimer = null;
 let accelTimer = null;
+let tickTimer = null;
+
 let isGameOver = false;
+let isPaused = false;            // during countdown
+let timeLeftMs = 0;              // remaining time for current target
+let timeLimitMs = 1400;          // base time limit; will shrink as game speeds up
 
 // ---------- UI helpers ----------
 function setMessage(text, show = true) {
@@ -51,9 +57,43 @@ function randomColor() {
   return COLORS[Math.floor(Math.random() * COLORS.length)];
 }
 
+// ---------- time limit logic ----------
+function recalcTimeLimit() {
+  // spawnMs가 줄어들수록 timeLimit도 줄어듦(너무 빡세지 않게 하한 설정)
+  // 원하는 난이도에 맞게 숫자만 조정하면 됨.
+  // 예: base 1400ms, min 420ms
+  const minLimit = 420;
+  const scaled = Math.floor(spawnMs * 1.25); // spawn 속도 대비 약간 여유
+  timeLimitMs = Math.max(minLimit, Math.min(1400, scaled));
+}
+
+function resetTargetTimer() {
+  recalcTimeLimit();
+  timeLeftMs = timeLimitMs;
+}
+
+function startTickLoop() {
+  clearInterval(tickTimer);
+  tickTimer = setInterval(() => {
+    if (isGameOver || isPaused) return;
+
+    if (blocks.length === 0) return; // 타겟이 없으면 굳이 깎지 않음
+
+    timeLeftMs -= 50;
+
+    // 메시지에 남은시간 표시(원하면 UI 따로 빼도 됨)
+    const need = blocks[0].dataset.color.toUpperCase();
+    setMessage(`NEXT: ${need}  |  TIME: ${(timeLeftMs / 1000).toFixed(2)}s`, true);
+
+    if (timeLeftMs <= 0) {
+      gameOver(`시간초과! 다음은 ${need}였음\n(R로 재시작)`);
+    }
+  }, 50);
+}
+
 // ---------- game logic ----------
 function shoot(color) {
-  if (isGameOver) return;
+  if (isGameOver || isPaused) return;
   if (blocks.length === 0) return;
 
   const target = blocks[0];
@@ -72,54 +112,113 @@ function shoot(color) {
 
   score += 1;
   updateHud();
+
+  // 다음 타겟으로 넘어가면 타이머 리셋
+  if (blocks.length > 0) resetTargetTimer();
+  else setMessage("블럭 생성 중...", true);
+}
+
+function stopAllTimers() {
+  clearInterval(spawnTimer);
+  clearInterval(accelTimer);
+  clearInterval(tickTimer);
+  spawnTimer = null;
+  accelTimer = null;
+  tickTimer = null;
 }
 
 function gameOver(reason) {
   isGameOver = true;
-  clearInterval(spawnTimer);
-  clearInterval(accelTimer);
+  stopAllTimers();
   setMessage(reason, true);
 }
 
-function restart() {
-  // clear
+function startLoops() {
+  // 초기 타겟 타이머 세팅
+  if (blocks.length > 0) resetTargetTimer();
+
+  // spawn loop
+  spawnTimer = setInterval(() => {
+    if (isGameOver || isPaused) return;
+
+    createBlock(randomColor());
+
+    // 블럭 너무 쌓이면 게임오버(선택)
+    if (blocks.length > 18) {
+      gameOver("블럭이 너무 쌓였다! (R로 재시작)");
+    }
+
+    // 타겟이 비어있다가 새로 생긴 경우 타이머 세팅
+    if (blocks.length === 1) resetTargetTimer();
+  }, spawnMs);
+
+  // acceleration
+  accelTimer = setInterval(() => {
+    if (isGameOver || isPaused) return;
+
+    spawnMs = Math.max(260, Math.floor(spawnMs * 0.92)); // 8% faster
+    speedFactor = (1000 / spawnMs) * 1.0;
+
+    // 스폰 타이머 갱신
+    clearInterval(spawnTimer);
+    spawnTimer = setInterval(() => {
+      if (isGameOver || isPaused) return;
+
+      createBlock(randomColor());
+      if (blocks.length > 18) gameOver("블럭이 너무 쌓였다! (R로 재시작)");
+      if (blocks.length === 1) resetTargetTimer();
+    }, spawnMs);
+
+    // 속도 바뀌면 제한시간도 다시 반영
+    recalcTimeLimit();
+
+    updateHud();
+  }, 6000);
+
+  startTickLoop();
+}
+
+function clearBlocks() {
   blocks.forEach(b => b.remove());
   blocks = [];
+}
+
+function restartWithCountdown() {
+  stopAllTimers();
+  clearBlocks();
+
   score = 0;
   spawnMs = 1000;
   speedFactor = 1.0;
   isGameOver = false;
 
-  setMessage("", false);
   updateHud();
 
-  // start with a few blocks so "순서"가 바로 보임
-  for (let i = 0; i < 5; i++) createBlock(randomColor());
+  // 준비시간
+  isPaused = true;
 
-  // spawn loop
-  spawnTimer = setInterval(() => {
-    createBlock(randomColor());
+  let t = 3;
+  setMessage(`READY... ${t}`, true);
 
-    // 너무 길어지면(화면 넘칠 만큼) -> 게임오버
-    // (원하면 이 제한 없애도 됨)
-    if (blocks.length > 18) {
-      gameOver("블럭이 너무 쌓였다! (R로 재시작)");
+  const cd = setInterval(() => {
+    t -= 1;
+    if (t > 0) {
+      setMessage(`READY... ${t}`, true);
+      return;
     }
-  }, spawnMs);
+    clearInterval(cd);
 
-  // acceleration: every 6s, spawn faster
-  accelTimer = setInterval(() => {
-    spawnMs = Math.max(260, Math.floor(spawnMs * 0.92)); // 8% faster, min 260ms
-    speedFactor = (1000 / spawnMs) * 1.0;
+    setMessage("GO!", true);
 
-    clearInterval(spawnTimer);
-    spawnTimer = setInterval(() => {
-      createBlock(randomColor());
-      if (blocks.length > 18) gameOver("블럭이 너무 쌓였다! (R로 재시작)");
-    }, spawnMs);
+    // 시작할 블럭 미리 5개 쌓아두기
+    for (let i = 0; i < 5; i++) createBlock(randomColor());
 
-    updateHud();
-  }, 6000);
+    isPaused = false;
+    resetTargetTimer();
+    startLoops();
+
+    // GO 문구는 조금 뒤에 타이머 메시지로 대체됨
+  }, 1000);
 }
 
 // ---------- input wiring ----------
@@ -130,14 +229,13 @@ document.querySelectorAll(".btn").forEach(btn => {
   });
 });
 
-// keyboard support (optional, but useful)
 window.addEventListener("keydown", (e) => {
   const k = e.key.toLowerCase();
   if (k === "q") shoot("red");
   if (k === "w") shoot("green");
   if (k === "e") shoot("blue");
-  if (k === "r") restart();
+  if (k === "r") restartWithCountdown();
 });
 
 // boot
-restart();
+restartWithCountdown();
