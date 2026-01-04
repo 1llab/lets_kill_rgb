@@ -62,20 +62,6 @@ body {
   overflow: hidden;
 }
 
-#stackLane {
-  position: absolute;
-  left: 50%;
-  top: 18px;
-  transform: translateX(-50%);
-  width: var(--laneW);
-  height: calc(100% - 90px);
-  display: grid;
-  justify-items: center;
-  align-content: start;
-  gap: var(--gap);
-  padding-top: 4px;
-  pointer-events: none;
-}
 
 #centerLine {
   position: absolute;
@@ -88,12 +74,14 @@ body {
 }
 
 .block {
+  position: absolute; /* 중요 */
   width: var(--blockSize);
   height: var(--blockSize);
   border-radius: 14px;
   box-shadow: 0 10px 20px rgba(0,0,0,0.35);
   border: 1px solid rgba(255,255,255,0.16);
 }
+
 
 .block.red { background: linear-gradient(180deg, #ff6b6b, var(--red)); }
 .block.green { background: linear-gradient(180deg, #7bffb0, var(--green)); }
@@ -194,3 +182,4 @@ body {
   background: rgba(255,255,255,0.85);
   transition: width 50ms linear;
 }
+
