@@ -11,6 +11,7 @@ const speedEl = document.getElementById("speed");
 const msgEl = document.getElementById("message");
 const timerBarWrap = document.getElementById("timerBarWrap");
 const timerBar = document.getElementById("timerBar");
+const gameArea = document.getElementById("gameArea");
 
 const COLORS = ["red", "green", "blue"];
 
@@ -60,17 +61,21 @@ function createBlock(color) {
 }
 
 function moveBlocks() {
+  if (isGameOver) return;
+
+  const bottomLimit = gameArea.clientHeight - 60; // 블럭 높이만큼 보정
+
   blocks.forEach(block => {
-    const y = block.offsetTop + 1.2; // 속도
+    const y = block.offsetTop + 1.2; // 낙하 속도
     block.style.top = y + "px";
 
-    // 바닥까지 오면 게임오버
-    if (y > 360) {
-      gameOver("블럭이 닿았다!");
+    // 바닥에 닿았는지 체크
+    if (y >= bottomLimit) {
+      gameOver("블럭이 바닥에 닿았다!");
     }
   });
 
-  if (!isGameOver) requestAnimationFrame(moveBlocks);
+  requestAnimationFrame(moveBlocks);
 }
 
 function randomColor() {
@@ -118,7 +123,7 @@ function startTickLoop() {
     updateTimerBar();
 
     // 메시지에 남은시간 표시(원하면 UI 따로 빼도 됨)
-    const need = blocks[0].dataset.color.toUpperCase();
+    const need = blocks[blocks.length - 1].dataset.color.toUpperCase();
     setMessage(`NEXT: ${need}  |  TIME: ${(timeLeftMs / 1000).toFixed(2)}s`, true);
 
     if (timeLeftMs <= 0) {
@@ -129,9 +134,10 @@ function startTickLoop() {
 
 // ---------- game logic ----------
 function shoot(color) {
-  if (isGameOver || blocks.length === 0) return;
+  if (isGameOver || isPaused) return;
+  if (blocks.length === 0) return;
 
-  // ✅ 가장 아래 블럭이 타겟
+  // 가장 아래 블럭이 타겟
   const target = blocks[blocks.length - 1];
   const need = target.dataset.color;
 
@@ -142,10 +148,16 @@ function shoot(color) {
     return;
   }
 
-  // 맞추면 제거
+  // 성공
   target.remove();
-  blocks.pop(); // ⬅️ 핵심
+  blocks.pop();
+
+  score += 1;
+  updateHud();
+
+  resetTargetTimer();
 }
+
 
   // correct
   fireBeam(color);
@@ -229,6 +241,7 @@ function clearBlocks() {
 function restartWithCountdown() {
   stopAllTimers();
   clearBlocks();
+  moveBlocks();
 
   score = 0;
   spawnMs = 1000;
@@ -282,5 +295,6 @@ window.addEventListener("keydown", (e) => {
 
 // boot
 restartWithCountdown();
+
 
 
