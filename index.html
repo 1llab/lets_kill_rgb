@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RGB Beam Game</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="top">
+      <div class="title">RGB BEAM</div>
+      <div class="hud">
+        <div>Score: <span id="score">0</span></div>
+        <div>Speed: <span id="speed">1.00</span></div>
+      </div>
+    </header>
+
+    <main id="gameArea" aria-label="game area">
+      <div id="stackLane"></div>
+      <div id="beamLayer"></div>
+
+      <div id="centerLine" aria-hidden="true"></div>
+
+      <div id="message" class="hidden"></div>
+    </main>
+
+    <footer class="controls">
+      <button class="btn red" data-color="red">RED</button>
+      <button class="btn green" data-color="green">GREEN</button>
+      <button class="btn blue" data-color="blue">BLUE</button>
+    </footer>
+
+    <div class="hint">
+      키보드도 됨: <b>Q</b>=RED, <b>W</b>=GREEN, <b>E</b>=BLUE / <b>R</b>=Restart
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
