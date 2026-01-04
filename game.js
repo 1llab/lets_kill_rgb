@@ -4,7 +4,6 @@
 // - R restart with countdown (gives you time to ready)
 // - Spawn gets faster over time
 
-const stackLane = document.getElementById("stackLane");
 const beamLayer = document.getElementById("beamLayer");
 const scoreEl = document.getElementById("score");
 const speedEl = document.getElementById("speed");
@@ -53,27 +52,28 @@ function createBlock(color) {
   el.className = `block ${color}`;
   el.dataset.color = color;
 
-  el.style.top = "-60px"; // 화면 위에서 시작
   el.style.position = "absolute";
+  el.style.top = "-60px";
+  el.style.left = "50%";
+  el.style.transform = "translateX(-50%)";
 
   gameArea.appendChild(el);
   blocks.push(el);
 }
 
 function moveBlocks() {
-  if (isGameOver) return;
+  const bottomLimit = gameArea.clientHeight - 60;
 
-  const bottomLimit = gameArea.clientHeight - 60; // 블럭 높이만큼 보정
+  if (!isGameOver && !isPaused) {
+    blocks.forEach(block => {
+      const y = block.offsetTop + 1.2;
+      block.style.top = y + "px";
 
-  blocks.forEach(block => {
-    const y = block.offsetTop + 1.2; // 낙하 속도
-    block.style.top = y + "px";
-
-    // 바닥에 닿았는지 체크
-    if (y >= bottomLimit) {
-      gameOver("블럭이 바닥에 닿았다!");
-    }
-  });
+      if (y >= bottomLimit) {
+        gameOver("블럭이 바닥에 닿았다!");
+      }
+    });
+  }
 
   requestAnimationFrame(moveBlocks);
 }
@@ -276,6 +276,7 @@ window.addEventListener("keydown", (e) => {
 // boot
 moveBlocks();
 restartWithCountdown();
+
 
 
 
