@@ -9,6 +9,8 @@ const beamLayer = document.getElementById("beamLayer");
 const scoreEl = document.getElementById("score");
 const speedEl = document.getElementById("speed");
 const msgEl = document.getElementById("message");
+const timerBarWrap = document.getElementById("timerBarWrap");
+const timerBar = document.getElementById("timerBar");
 
 const COLORS = ["red", "green", "blue"];
 
@@ -57,6 +59,20 @@ function randomColor() {
   return COLORS[Math.floor(Math.random() * COLORS.length)];
 }
 
+function updateTimerBar() {
+  if (!timerBar) return;
+
+  // 타겟이 없거나 일시정지면 풀로 보이게
+  if (isPaused || blocks.length === 0) {
+    timerBar.style.width = "100%";
+    return;
+  }
+
+  const ratio = Math.max(0, Math.min(1, timeLeftMs / timeLimitMs));
+  timerBar.style.width = `${(ratio * 100).toFixed(2)}%`;
+}
+
+
 // ---------- time limit logic ----------
 function recalcTimeLimit() {
   // spawnMs가 줄어들수록 timeLimit도 줄어듦(너무 빡세지 않게 하한 설정)
@@ -70,6 +86,7 @@ function recalcTimeLimit() {
 function resetTargetTimer() {
   recalcTimeLimit();
   timeLeftMs = timeLimitMs;
+  updateTimerBar();
 }
 
 function startTickLoop() {
@@ -80,6 +97,7 @@ function startTickLoop() {
     if (blocks.length === 0) return; // 타겟이 없으면 굳이 깎지 않음
 
     timeLeftMs -= 50;
+    updateTimerBar();
 
     // 메시지에 남은시간 표시(원하면 UI 따로 빼도 됨)
     const need = blocks[0].dataset.color.toUpperCase();
@@ -130,6 +148,7 @@ function stopAllTimers() {
 function gameOver(reason) {
   isGameOver = true;
   stopAllTimers();
+  updateTimerBar();
   setMessage(reason, true);
 }
 
@@ -239,3 +258,4 @@ window.addEventListener("keydown", (e) => {
 
 // boot
 restartWithCountdown();
+
