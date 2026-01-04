@@ -183,3 +183,19 @@ body {
   transition: width 50ms linear;
 }
 
+/* ✅ Layering fix */
+#blockLayer, #beamLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+#blockLayer { z-index: 10; }
+#beamLayer  { z-index: 20; }
+
+#timerBarWrap, #centerLine { z-index: 30; }
+#message { z-index: 40; }
+
+/* 블럭은 blockLayer 안에서만 보이게 */
+.block { z-index: 10; }
+
