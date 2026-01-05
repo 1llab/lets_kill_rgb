@@ -338,14 +338,3 @@ window.addEventListener("keydown", (e) => {
 // boot
 moveBlocks();
 restartWithCountdown();
-
-
-
-
-
-
-
-
-
-
-
