@@ -34,6 +34,9 @@ let countdownTimer = null;
 
 let fallSpeed = 1.2;
 
+let spawnTimeout = null;
+let nextSpawnAt = 0;
+
 // ---------- UI helpers ----------
 function setMessage(text, show = true) {
   msgEl.textContent = text;
@@ -213,6 +216,39 @@ function startTickLoop() {
   }, 50);
 }
 
+function scheduleNextSpawn() {
+  if (isGameOver || isPaused) return;
+
+  const now = performance.now();
+
+  // 처음 호출이면 기준 시각 설정
+  if (!nextSpawnAt) nextSpawnAt = now + spawnMs;
+
+  // 다음 예정 시간까지 남은 ms
+  const delay = Math.max(0, nextSpawnAt - now);
+
+  clearTimeout(spawnTimeout);
+  spawnTimeout = setTimeout(() => {
+    if (isGameOver || isPaused) return;
+
+    // 스폰 1회
+    const spawnY = getTopMostY() - (BLOCK_SIZE + GAP);
+    createBlock(randomColor(), spawnY);
+    normalizeStackIfNeeded();
+
+    if (blocks.length === 1) resetTargetTimer();
+
+    // 다음 스폰 예약 시간 갱신 (현재 spawnMs 기준으로)
+    nextSpawnAt += spawnMs;
+
+    // 혹시 많이 밀렸으면(탭 비활성 등) 기준 재정렬
+    const drift = performance.now() - nextSpawnAt;
+    if (drift > 2000) nextSpawnAt = performance.now() + spawnMs;
+
+    scheduleNextSpawn();
+  }, delay);
+}
+
 
 
 // ---------- game logic ----------
@@ -248,9 +284,12 @@ function stopAllTimers() {
   clearInterval(spawnTimer);
   clearInterval(accelTimer);
   clearInterval(tickTimer);
+  clearTimeout(spawnTimeout);
   spawnTimer = null;
   accelTimer = null;
   tickTimer = null;
+  spawnTimeout = null;
+  nextSpawnAt = 0;
 }
 
 function gameOver(reason) {
@@ -265,19 +304,8 @@ function startLoops() {
   if (blocks.length > 0) resetTargetTimer();
 
   // spawn loop
-  spawnTimer = setInterval(() => {
-    if (isGameOver || isPaused) return;
-
-    const spawnY = getTopMostY() - (BLOCK_SIZE + GAP);
-    createBlock(randomColor(), spawnY);
-    normalizeStackIfNeeded();
-
-
-
-
-    // 타겟이 비어있다가 새로 생긴 경우 타이머 세팅
-    if (blocks.length === 1) resetTargetTimer();
-  }, spawnMs);
+  nextSpawnAt = 0;
+  scheduleNextSpawn();
 
   // acceleration
   accelTimer = setInterval(() => {
@@ -289,16 +317,7 @@ function startLoops() {
 
     // 스폰 타이머 갱신
     clearInterval(spawnTimer);
-    spawnTimer = setInterval(() => {
-      if (isGameOver || isPaused) return;
-
-      const spawnY = getTopMostY() - (BLOCK_SIZE + GAP);
-      createBlock(randomColor(), spawnY);
-      normalizeStackIfNeeded();
-
-
-      if (blocks.length === 1) resetTargetTimer();
-    }, spawnMs);
+    // "여기"
 
     // 속도 바뀌면 제한시간도 다시 반영
     recalcTimeLimit();
@@ -388,6 +407,7 @@ window.addEventListener("keydown", (e) => {
 // boot
 moveBlocks();
 restartWithCountdown();
+
 
 
 
