@@ -13,7 +13,6 @@ const timerBar = document.getElementById("timerBar");
 const gameArea = document.getElementById("gameArea");
 const blockLayer = document.getElementById("blockLayer");
 
-
 const COLORS = ["red", "green", "blue"];
 
 let blocks = [];                 // queue: blocks[0] is next target
@@ -87,21 +86,6 @@ function moveBlocks() {
   requestAnimationFrame(moveBlocks);
 }
 
-function getBottomMostIndex() {
-  if (blocks.length === 0) return -1;
-
-  let bestIdx = 0;
-  let bestY = blocks[0].offsetTop;
-
-  for (let i = 1; i < blocks.length; i++) {
-    const y = blocks[i].offsetTop;
-    if (y > bestY) {
-      bestY = y;
-      bestIdx = i;
-    }
-  }
-  return bestIdx;
-}
 
 
 function randomColor() {
@@ -165,14 +149,11 @@ function startTickLoop() {
   clearInterval(tickTimer);
   tickTimer = setInterval(() => {
     if (isGameOver || isPaused) return;
-
-    if (blocks.length === 0) return; // 타겟이 없으면 굳이 깎지 않음
+    if (blocks.length === 0) return;
 
     timeLeftMs -= 50;
     updateTimerBar();
 
-    // 메시지에 남은시간 표시(원하면 UI 따로 빼도 됨)
-    const idx = getBottomMostIndex();
     const needUpper = getBottomMostColorUpper();
     if (!needUpper) return;
 
@@ -180,7 +161,10 @@ function startTickLoop() {
 
     if (timeLeftMs <= 0) {
       gameOver(`시간초과! 다음은 ${needUpper}였음\n(R로 재시작)`);
+    }
+  }, 50);
 }
+
 
 
 // ---------- game logic ----------
@@ -188,11 +172,10 @@ function shoot(color) {
   if (isGameOver || isPaused) return;
   if (blocks.length === 0) return;
 
-  const idx = getBottomMostIndex();
   const target = getBottomMostBlock();
   if (!target) return;
-  const need = target.dataset.color;
 
+  const need = target.dataset.color;
 
   fireBeam(color);
 
@@ -201,13 +184,16 @@ function shoot(color) {
     return;
   }
 
+  // 타겟 제거(요소 기준)
   target.remove();
   blocks = blocks.filter(b => b !== target);
 
   score += 1;
   updateHud();
-  resetTargetTimer();
+
+  if (blocks.length > 0) resetTargetTimer();
 }
+
 
 
 function stopAllTimers() {
@@ -234,7 +220,9 @@ function startLoops() {
   spawnTimer = setInterval(() => {
     if (isGameOver || isPaused) return;
 
-    createBlock(randomColor());
+    const spawnY = Math.floor(gameArea.clientHeight * 0.1);
+    createBlock(randomColor(), spawnY);
+
 
     // 타겟이 비어있다가 새로 생긴 경우 타이머 세팅
     if (blocks.length === 1) resetTargetTimer();
@@ -252,7 +240,9 @@ function startLoops() {
     spawnTimer = setInterval(() => {
       if (isGameOver || isPaused) return;
 
-      createBlock(randomColor());
+      const spawnY = Math.floor(gameArea.clientHeight * 0.1);
+      createBlock(randomColor(), spawnY);
+
       if (blocks.length === 1) resetTargetTimer();
     }, spawnMs);
 
@@ -297,9 +287,15 @@ function restartWithCountdown() {
 
     setMessage("GO!", true);
 
-    // 시작할 블럭 미리 5개 쌓아두기
+    const BASE_Y = Math.floor(gameArea.clientHeight * 0.1);
+    const BLOCK_SIZE = 56;
+    const GAP = 10;
+
     for (let i = 0; i < 5; i++) {
-      createBlock(randomColor(), -60 - i * (BLOCK_SIZE + GAP));
+      createBlock(
+        randomColor(),
+        BASE_Y - i * (BLOCK_SIZE + GAP)
+      );
     }
 
 
@@ -330,6 +326,7 @@ window.addEventListener("keydown", (e) => {
 // boot
 moveBlocks();
 restartWithCountdown();
+
 
 
 
