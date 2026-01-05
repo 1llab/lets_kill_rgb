@@ -160,6 +160,22 @@ function getTopMostY() {
   return topY;
 }
 
+function normalizeStackIfNeeded() {
+  const topY = getTopMostY();
+
+  // 너무 위로 올라가면(숫자가 너무 작아지면) 전부 아래로 당겨서 범위 유지
+  if (topY < -1200) {
+    const delta = -600 - topY; // topY를 -600 근처로 끌어내림
+
+    blocks.forEach(b => {
+      const y = (parseFloat(b.dataset.y) || b.offsetTop || 0) + delta;
+      b.dataset.y = String(y);
+      b.style.top = y + "px";
+    });
+  }
+}
+
+
 
 // ---------- time limit logic ----------
 function recalcTimeLimit() {
@@ -252,11 +268,9 @@ function startLoops() {
   spawnTimer = setInterval(() => {
     if (isGameOver || isPaused) return;
 
-    const spawnY = Math.max(
-      -800,
-      getTopMostY() - (BLOCK_SIZE + GAP)
-    );
+    const spawnY = getTopMostY() - (BLOCK_SIZE + GAP);
     createBlock(randomColor(), spawnY);
+    normalizeStackIfNeeded();
 
 
 
@@ -278,11 +292,9 @@ function startLoops() {
     spawnTimer = setInterval(() => {
       if (isGameOver || isPaused) return;
 
-      const spawnY = Math.max(
-        -800,
-        getTopMostY() - (BLOCK_SIZE + GAP)
-      );
+      const spawnY = getTopMostY() - (BLOCK_SIZE + GAP);
       createBlock(randomColor(), spawnY);
+      normalizeStackIfNeeded();
 
 
       if (blocks.length === 1) resetTargetTimer();
@@ -376,6 +388,7 @@ window.addEventListener("keydown", (e) => {
 // boot
 moveBlocks();
 restartWithCountdown();
+
 
 
 
