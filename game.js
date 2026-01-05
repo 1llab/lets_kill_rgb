@@ -65,6 +65,9 @@ function createBlock(color, initialY = -60) {
   el.style.left = "50%";
   el.style.transform = "translateX(-50%)";
 
+  el.dataset.y = String(initialY);
+  el.style.top = initialY + "px";
+
   // gameArea 말고 blockLayer에 붙이기
   blockLayer.appendChild(el);
   blocks.push(el);
@@ -78,8 +81,10 @@ function moveBlocks() {
     blocks.forEach(block => {
       if (!block.isConnected) return; // ✅ 이미 제거된 DOM이면 무시
 
-      const y = block.offsetTop + fallSpeed;
+      const y = (parseFloat(block.dataset.y) || 0) + fallSpeed;
       block.style.top = y + "px";
+      block.dataset.y = String(y);
+
 
       if (y >= bottomLimit) {
         gameOver("블럭이 바닥에 닿았다!");
@@ -90,6 +95,16 @@ function moveBlocks() {
   requestAnimationFrame(moveBlocks);
 }
 
+function getTopMostY() {
+  if (blocks.length === 0) return Math.floor(gameArea.clientHeight * 0.1);
+
+  let topY = parseFloat(blocks[0].dataset.y) || 0;
+  for (let i = 1; i < blocks.length; i++) {
+    const y = parseFloat(blocks[i].dataset.y) || 0;
+    if (y < topY) topY = y;
+  }
+  return topY;
+}
 
 
 function randomColor() {
@@ -352,4 +367,5 @@ window.addEventListener("keydown", (e) => {
 // boot
 moveBlocks();
 restartWithCountdown();
+
 
