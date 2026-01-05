@@ -108,6 +108,29 @@ function randomColor() {
   return COLORS[Math.floor(Math.random() * COLORS.length)];
 }
 
+function getBottomMostBlock() {
+  if (blocks.length === 0) return null;
+
+  let best = blocks[0];
+  let bestY = best.offsetTop;
+
+  for (let i = 1; i < blocks.length; i++) {
+    const b = blocks[i];
+    const y = b.offsetTop;
+    if (y > bestY) {
+      bestY = y;
+      best = b;
+    }
+  }
+  return best;
+}
+
+function getBottomMostColorUpper() {
+  const b = getBottomMostBlock();
+  return b ? b.dataset.color.toUpperCase() : null;
+}
+
+
 function updateTimerBar() {
   if (!timerBar) return;
 
@@ -150,14 +173,15 @@ function startTickLoop() {
 
     // 메시지에 남은시간 표시(원하면 UI 따로 빼도 됨)
     const idx = getBottomMostIndex();
-    const need = blocks[idx].dataset.color.toUpperCase();
-    setMessage(`NEXT: ${need}  |  TIME: ${(timeLeftMs / 1000).toFixed(2)}s`, true);
+    const needUpper = getBottomMostColorUpper();
+    if (!needUpper) return;
+
+    setMessage(`NEXT: ${needUpper}  |  TIME: ${(timeLeftMs / 1000).toFixed(2)}s`, true);
 
     if (timeLeftMs <= 0) {
-      gameOver(`시간초과! 다음은 ${need}였음\n(R로 재시작)`);
-    }
-  }, 50);
+      gameOver(`시간초과! 다음은 ${needUpper}였음\n(R로 재시작)`);
 }
+
 
 // ---------- game logic ----------
 function shoot(color) {
@@ -165,8 +189,10 @@ function shoot(color) {
   if (blocks.length === 0) return;
 
   const idx = getBottomMostIndex();
-  const target = blocks[idx];
+  const target = getBottomMostBlock();
+  if (!target) return;
   const need = target.dataset.color;
+
 
   fireBeam(color);
 
@@ -176,7 +202,7 @@ function shoot(color) {
   }
 
   target.remove();
-  blocks.splice(idx, 1);
+  blocks = blocks.filter(b => b !== target);
 
   score += 1;
   updateHud();
@@ -304,6 +330,7 @@ window.addEventListener("keydown", (e) => {
 // boot
 moveBlocks();
 restartWithCountdown();
+
 
 
 
