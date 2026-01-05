@@ -30,6 +30,10 @@ let isPaused = false;            // during countdown
 let timeLeftMs = 0;              // remaining time for current target
 let timeLimitMs = 1400;          // base time limit; will shrink as game speeds up
 
+let countdownTimer = null;
+
+let fallSpeed = 1.2;
+
 // ---------- UI helpers ----------
 function setMessage(text, show = true) {
   msgEl.textContent = text;
@@ -68,13 +72,13 @@ function createBlock(color, initialY = -60) {
 
 
 function moveBlocks() {
-  const bottomLimit = gameArea.clientHeight - 60;
+  const bottomLimit = gameArea.clientHeight - BLOCK_SIZE;
 
   if (!isGameOver && !isPaused) {
     blocks.forEach(block => {
       if (!block.isConnected) return; // ✅ 이미 제거된 DOM이면 무시
 
-      const y = block.offsetTop + 1.2;
+      const y = block.offsetTop + fallSpeed;
       block.style.top = y + "px";
 
       if (y >= bottomLimit) {
@@ -234,6 +238,7 @@ function startLoops() {
 
     spawnMs = Math.max(260, Math.floor(spawnMs * 0.92)); // 8% faster
     speedFactor = (1000 / spawnMs) * 1.0;
+    fallSpeed = Math.min(4.5, fallSpeed * 1.08);
 
     // 스폰 타이머 갱신
     clearInterval(spawnTimer);
@@ -262,6 +267,12 @@ function clearBlocks() {
 
 function restartWithCountdown() {
   stopAllTimers();
+
+  if (countdownTimer) {
+    clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+  
   clearBlocks();
 
   score = 0;
@@ -277,13 +288,14 @@ function restartWithCountdown() {
   let t = 3;
   setMessage(`READY... ${t}`, true);
 
-  const cd = setInterval(() => {
+  countdownTimer = setInterval(() => {
     t -= 1;
     if (t > 0) {
       setMessage(`READY... ${t}`, true);
       return;
     }
-    clearInterval(cd);
+    clearInterval(countdownTimer);
+    countdownTimer = null;
 
     setMessage("GO!", true);
 
@@ -326,6 +338,7 @@ window.addEventListener("keydown", (e) => {
 // boot
 moveBlocks();
 restartWithCountdown();
+
 
 
 
