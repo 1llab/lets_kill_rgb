@@ -252,8 +252,12 @@ function startLoops() {
   spawnTimer = setInterval(() => {
     if (isGameOver || isPaused) return;
 
-    const spawnY = getTopMostY() - (BLOCK_SIZE + GAP);
+    const spawnY = Math.max(
+      -800,
+      getTopMostY() - (BLOCK_SIZE + GAP)
+    );
     createBlock(randomColor(), spawnY);
+
 
 
 
@@ -274,8 +278,12 @@ function startLoops() {
     spawnTimer = setInterval(() => {
       if (isGameOver || isPaused) return;
 
-      const spawnY = Math.floor(gameArea.clientHeight * 0.1);
+      const spawnY = Math.max(
+        -800,
+        getTopMostY() - (BLOCK_SIZE + GAP)
+      );
       createBlock(randomColor(), spawnY);
+
 
       if (blocks.length === 1) resetTargetTimer();
     }, spawnMs);
@@ -333,10 +341,11 @@ function restartWithCountdown() {
     const GAP = 10;
 
     for (let i = 0; i < 5; i++) {
-      createBlock(
-        randomColor(),
+      const y = Math.max(
+        -800,
         BASE_Y - i * (BLOCK_SIZE + GAP)
       );
+      createBlock(randomColor(), y);
     }
 
 
@@ -367,5 +376,6 @@ window.addEventListener("keydown", (e) => {
 // boot
 moveBlocks();
 restartWithCountdown();
+
 
 
