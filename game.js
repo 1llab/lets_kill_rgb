@@ -132,6 +132,19 @@ function updateTimerBar() {
   timerBar.style.width = `${(ratio * 100).toFixed(2)}%`;
 }
 
+function getTopMostY() {
+  if (blocks.length === 0) {
+    return Math.floor(gameArea.clientHeight * 0.1);
+  }
+
+  let topY = blocks[0].offsetTop;
+  for (let i = 1; i < blocks.length; i++) {
+    const y = blocks[i].offsetTop;
+    if (y < topY) topY = y;
+  }
+  return topY;
+}
+
 
 // ---------- time limit logic ----------
 function recalcTimeLimit() {
@@ -224,8 +237,9 @@ function startLoops() {
   spawnTimer = setInterval(() => {
     if (isGameOver || isPaused) return;
 
-    const spawnY = Math.floor(gameArea.clientHeight * 0.1);
+    const spawnY = getTopMostY() - (BLOCK_SIZE + GAP);
     createBlock(randomColor(), spawnY);
+
 
 
     // 타겟이 비어있다가 새로 생긴 경우 타이머 세팅
@@ -338,3 +352,4 @@ window.addEventListener("keydown", (e) => {
 // boot
 moveBlocks();
 restartWithCountdown();
+
